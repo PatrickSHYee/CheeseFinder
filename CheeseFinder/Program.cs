@@ -10,7 +10,11 @@ namespace CheeseFinder
     {
         static void Main(string[] args)
         {
+            CheeseNibbler game = new CheeseNibbler();
+            game.PlayGame();
         }
+
+
 
         class Point
         {
@@ -48,51 +52,53 @@ namespace CheeseFinder
 
             public CheeseNibbler()
             {
-                for (int x = 0; x < TheGrid.GetLength(0); x++)
+                for (int y = 0; y< TheGrid.GetLength(0); y++)
                 {
-                    for (int y = 0; y < TheGrid.GetLength(1); y++)
+                    for (int x = 0; x < TheGrid.GetLength(1); x++)
                     {
                         TheGrid[x, y] = new Point(x, y);
                     }
                 }
                 // set the objects on the grid
-                TheMouse = new Point(RNG.Next(0, TheGrid.GetLength(0)), RNG.Next(0, RNG.Next(0, TheGrid.GetLength(1))));
-                int tempNumberX = RNG.Next(0, TheGrid.GetLength(0));
-                int tempNumberY = RNG.Next(0, TheGrid.GetLength(0));
-                if (tempNumberX != TheMouse.X)  // make sure if the x of cheese is not equal the mouse
+                // change the status of the Grid with the cheese and the mouse
+                TheMouse = TheGrid[RNG.Next(0, TheGrid.GetLength(0)), RNG.Next(0, RNG.Next(0, TheGrid.GetLength(1)))];
+                TheMouse.Status = Point.PointStatus.Mouse;
+
+                do
                 {
-                    if (tempNumberY != TheMouse.Y)  // make sure if the y of cheese is not equal to the mouse
-                    {
-                        TheCheese = new Point(tempNumberX, tempNumberY);  // assign the point to the cheese
-                    }
-                    else  // the y is equal to the mouse
-                    {
-                        TheCheese = new Point(tempNumberX, tempNumberY - 3);  // moves the cheese to the left of the mouse.
-                    }
-                }
-                else  // x of the cheese is at the mouse local
+                    TheCheese = TheGrid[RNG.Next(0, TheGrid.GetLength(0)), RNG.Next(0, RNG.Next(0, TheGrid.GetLength(1)))];
+                } while (this.TheCheese.Status != Point.PointStatus.Empty);
+                TheCheese.Status = Point.PointStatus.Cheese;
+
+                // set the round count to 0 
+                Round = 0;
+            }
+
+            public void PlayGame()
+            {
+                bool isCheese = false;
+                while (!isCheese)
                 {
-                    if (tempNumberY != TheMouse.Y)  // check if the y of cheese is at the mouse Y
+                    DrawGrid();
+                    ConsoleKey userInput = GetUserMove();
+                    if (ValidMove(userInput))
                     {
-                        TheCheese = new Point(tempNumberX - 3, tempNumberY);  // moves the cheese up
+                        isCheese = MoveMouse(userInput);
+                        Round++;
                     }
                     else
                     {
-                        TheCheese = new Point(tempNumberX - 3, tempNumberY -3);  // for some reason that the cheese and the mouse are equal
+                        Console.WriteLine("Invalid input");
                     }
                 }
-                
-
-                // change the status of the Grid with the cheese and the mouse
-                TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Mouse;
-                TheGrid[TheCheese.X, TheCheese.Y].Status = Point.PointStatus.Cheese;
+                if (isCheese) Console.WriteLine("You have won in {0} rounds.", Round);
             }
-
             /// <summary>
             /// Draws the grid with the updated information
             /// </summary>
             public void DrawGrid()
             {
+                Console.Clear();
                 for (int x = 0; x < TheGrid.GetLength(0); x++)
                 {
                     for (int y = 0; y < TheGrid.GetLength(1); y++)
@@ -106,6 +112,7 @@ namespace CheeseFinder
                     }
                     Console.WriteLine();
                 }
+                Console.WriteLine("Round: {0}", Round);
             }
 
             /// <summary>
@@ -137,32 +144,75 @@ namespace CheeseFinder
             /// </summary>
             /// <param name="input">User input</param>
             /// <returns>is whether or weather move</returns>
-            public bool MoveMouse(ConsoleKey input)
+            public bool ValidMove(ConsoleKey input)
             {
                 switch (input)
                 {
                     case ConsoleKey.LeftArrow:
-                        if (TheMouse.X - 1 > 0)
-                        {  // checks if the mouse has reach the most left edge of the grid
-                            TheMouse.X--;
-                            return true;
-                        }
+                        if (TheMouse.Y - 1 >= 0) return true;
+                        else return false;
                     case ConsoleKey.RightArrow:
-                        if (TheMouse.X + 1 < 9)  // checks if the mouse has reach the most right edge of the grid
-                            TheMouse.X++;
-                        TheMouse.X++;
-                        return true;
-                    case ConsoleKey.UpArrow: 
-                        if (TheMouse.Y - 1 > 0)  // checks if the mouse has reach the most upper edge of the grid
-                            TheMouse.Y--;
-                        return true;
-                    case ConsoleKey.DownArrow: 
-                        if (TheMouse.Y + 1 < 9)  // checks if the mouse has reach the most bottom edge of the grid
-                            TheMouse.Y++;
-                        return true;
+                        if (TheMouse.Y + 1 < 10) return true;
+                        else return false;
+                    case ConsoleKey.UpArrow:
+                        if (TheMouse.X - 1 >= 0) return true;
+                        else return false;
+                    case ConsoleKey.DownArrow:
+                        if (TheMouse.X + 1 < 10) return true;
+                        else return false;
                     default: Console.WriteLine("Bad move"); break;
                 }
                 return false;  // nothing is done to the mouse
+            }
+
+            /// <summary>
+            /// Moves the mouse and if that move is at cheese.
+            /// </summary>
+            /// <param name="input">User input</param>
+            /// <returns>Found the cheese</returns>
+            public bool MoveMouse(ConsoleKey input)
+            {
+
+                // update the status of the grid with a empty
+                // Move the mouse
+                // re update the status of the grid with the mouse
+                switch (input)
+                {
+                    case ConsoleKey.LeftArrow:
+                        {
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Empty;
+                            TheMouse.Y--;
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Mouse;
+                            break;
+                        }
+                    case ConsoleKey.RightArrow:
+                        {
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Empty;
+                            TheMouse.Y++;
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Mouse;
+                            break;
+                        }
+                    case ConsoleKey.UpArrow:
+                        {
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Empty;
+                            TheMouse.X--;
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Mouse;
+                            break;
+                        }
+                    case ConsoleKey.DownArrow:
+                        {
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Empty;
+                            TheMouse.X++;
+                            TheGrid[TheMouse.X, TheMouse.Y].Status = Point.PointStatus.Mouse;
+                            break;
+                        }
+                }
+                // check if the mouse is on the cheese
+                if (TheMouse.X == TheCheese.X && TheMouse.Y == TheCheese.Y)
+                {
+                    return true;
+                }
+                else return false;
             }
         }
     }
