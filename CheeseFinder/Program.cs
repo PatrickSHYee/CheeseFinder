@@ -52,7 +52,7 @@ namespace CheeseFinder
 
             public CheeseNibbler()
             {
-                for (int y = 0; y< TheGrid.GetLength(0); y++)
+                for (int y = 0; y < TheGrid.GetLength(0); y++)
                 {
                     for (int x = 0; x < TheGrid.GetLength(1); x++)
                     {
